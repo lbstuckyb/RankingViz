@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Selectivo — Esgrima Colombia</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{background:#09091a;color:#b0b0c0;font-family:'DM Sans',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#09091a}
+::-webkit-scrollbar-thumb{background:#222244;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#333366}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px 12px;flex-wrap:wrap;gap:12px}
+.header-left{}
+.header-title{font-size:26px;font-weight:800;color:#e8e8f0;letter-spacing:-0.5px}
+.header-title .sword{color:#e0a526}
+.header-sub{font-family:'DM Mono',monospace;font-size:12px;color:#4a5a6a;margin-top:3px}
+.btn-update{padding:7px 16px;background:rgba(224,165,38,0.1);border:1px solid rgba(224,165,38,0.25);border-radius:8px;color:#e0a526;font-weight:600;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.btn-update:hover{background:rgba(224,165,38,0.22)}
+
+/* TABS */
+.tabs-wrap{padding:8px 28px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs-wrap::-webkit-scrollbar{height:0}
+.tabs{display:flex;gap:8px;min-width:max-content}
+.tab{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .2s;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,#e0a526,#c48a10);color:#0d0d1a;font-weight:700;outline:none}
+.tab:not(.active){background:rgba(255,255,255,0.035);color:#6a7a8a;outline:1px solid rgba(255,255,255,0.05)}
+.tab:not(.active):hover{background:rgba(255,255,255,0.06)}
+.tab .icon{font-size:14px}
+.tab .badge{font-size:9.5px;padding:1px 4px;border-radius:4px;font-weight:600;margin-left:2px}
+.tab.active .badge{background:rgba(0,0,0,0.2);color:#0d0d1a}
+.tab:not(.active) .badge{background:rgba(255,255,255,0.06);color:#5a6a7a}
+
+/* SECTION TITLE */
+.section-title-wrap{padding:22px 28px 0}
+.section-title{font-size:19px;font-weight:700;color:#dde0f0}
+.section-bar{width:44px;height:3px;background:#e0a526;border-radius:2px;margin-top:8px}
+
+/* TABLE */
+.table-wrap{padding:18px 28px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:500px}
+thead th{background:#111128;color:#6a7a8a;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border-bottom:2px solid #222244;position:sticky;top:0;z-index:2}
+th.col-rank{width:32px;text-align:center}
+th.col-name{text-align:left;min-width:130px}
+th.col-comp{font-size:9px;writing-mode:vertical-rl;text-orientation:mixed;height:90px;padding:6px 3px;white-space:nowrap;max-width:28px}
+th.col-total{background:#18182e;color:#e0a526;min-width:52px;text-align:center}
+td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;text-align:center}
+td.cell-rank{font-weight:700;font-size:14px;text-align:center}
+td.cell-name{font-weight:600;color:#dde0f0;white-space:nowrap;text-align:left}
+td.cell-pts{color:#b8cce0;font-weight:500;font-size:12px}
+td.cell-pts.empty{color:#282840}
+td.cell-total{font-weight:800;font-size:15px;color:#e0a526;background:rgba(224,165,38,0.06)}
+
+.row-1{background:rgba(224,165,38,0.14)}
+.row-2{background:rgba(224,165,38,0.09)}
+.row-3{background:rgba(224,165,38,0.055)}
+.row-4{background:rgba(224,165,38,0.03)}
+.row-odd{background:rgba(255,255,255,0.015)}
+.row-even{background:rgba(255,255,255,0.04)}
+
+.rank-1{color:#e0a526}
+.rank-2{color:#cda030}
+.rank-3{color:#b0903a}
+.rank-4{color:#8a7a4a}
+.rank-default{color:#555568}
+
+/* CHART */
+.chart-section{padding:32px 28px 40px}
+.chart-title{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#5a6a7a;font-weight:700;margin-bottom:16px}
+.chart-container{position:relative;height:320px;width:100%}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#12122c;border:1px solid #2a2a4a;border-radius:16px;padding:32px;width:400px;max-width:92vw;position:relative;animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a6a7a;font-size:20px;cursor:pointer;line-height:1}
+.modal-close:hover{color:#b0b0c0}
+.modal-title{font-size:17px;font-weight:700;color:#e0e0f0;margin-bottom:6px}
+.modal-desc{font-size:12px;color:#5a6a7a;margin-bottom:18px;line-height:1.5}
+.modal-input{width:100%;padding:10px 14px;background:#0a0a18;border:1px solid #222244;border-radius:8px;color:#e0e0f0;font-family:'DM Mono',monospace;font-size:14px;outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:#444466}
+.modal-input.error{border-color:#E63946}
+.modal-error{color:#E63946;font-size:11px;margin-top:6px;min-height:16px}
+.modal-btn{width:100%;padding:11px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:14px;transition:opacity .2s}
+.modal-btn:hover{opacity:.88}
+.modal-btn-gold{background:linear-gradient(135deg,#e0a526,#c48a10);color:#0d0d1a}
+.modal-btn-teal{background:#2A9D8F;color:#fff}
+.modal-btn-dark{background:#222244;color:#d0d0e0}
+
+.dropzone{border:2px dashed #2a2a4a;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.dropzone.over{border-color:#e0a526;background:rgba(224,165,38,0.04)}
+.dropzone-icon{font-size:32px;margin-bottom:8px;opacity:.5}
+.dropzone-text{font-size:13px;color:#8a8aaa;margin-bottom:4px}
+.dropzone-sub{font-size:11px;color:#4a5a6a}
+.dropzone input[type=file]{display:none}
+
+.spinner{display:inline-block;font-size:32px;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-icon{font-size:36px;margin-bottom:10px}
+.step-center{text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-title"><span class="sword">⚔</span> Ranking Selectivo</div>
+    <div class="header-sub" id="headerSub"></div>
+  </div>
+  <button class="btn-update" id="btnUpdate">↑ Actualizar Datos</button>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs" id="tabsBar"></div>
+</div>
+
+<!-- SECTION TITLE -->
+<div class="section-title-wrap">
+  <div class="section-title" id="sectionTitle"></div>
+  <div class="section-bar"></div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <table id="rankTable"><thead></thead><tbody></tbody></table>
+</div>
+
+<!-- CHART -->
+<div class="chart-section">
+  <div class="chart-title">Evolución Acumulada de Puntaje</div>
+  <div class="chart-container"><canvas id="chartCanvas"></canvas></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box" id="modalBox">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════ EMBEDDED DATA ═══════════════
+const DEFAULT_DATA=[{"f":"Maria Jaramillo","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":21,"pp":1,"ca":14,"p":14},{"f":"Alejandra Piedrahita","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":24,"pp":1,"ca":14,"p":14},{"f":"Valentina Triana","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":38,"pp":1,"ca":8,"p":8},{"f":"Eliana Caicedo","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":87,"pp":1,"ca":2,"p":2},{"f":"Carmen Correa","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":117,"pp":1,"ca":-4,"p":0},{"f":"Oriana Tovar","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":118,"pp":1,"ca":-4,"p":0},{"f":"Susana Salazar","w":"EF","d":"2022-02-06T00:00:00","c":"Montelimar","k":3,"pl":121,"pp":1,"ca":-4,"p":0},{"f":"Maria Jaramillo","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":110,"pp":1,"ca":14,"p":14},{"f":"Valentina Triana","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":144,"pp":1,"ca":8,"p":8},{"f":"Carmen Correa","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":191,"pp":1,"ca":2,"p":2},{"f":"Alejandra Piedrahita","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":202,"pp":1,"ca":2,"p":2},{"f":"Oriana Tovar","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":213,"pp":0,"ca":2,"p":0},{"f":"Susana Salazar","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":258,"pp":0,"ca":0,"p":0},{"f":"Eliana Caicedo","w":"EF","d":"2022-02-13T00:00:00","c":"CM Barcelona","k":6,"pl":262,"pp":0,"ca":0,"p":0},{"f":"Edwin Gonzalez","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":27,"pp":1,"ca":14,"p":14},{"f":"Luis Correa Vila","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":31,"pp":1,"ca":14,"p":14},{"f":"Sebastian Cuellar","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":39,"pp":1,"ca":8,"p":8},{"f":"Mario Palacios","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":45,"pp":1,"ca":8,"p":8},{"f":"Wilber Restrepo","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":55,"pp":1,"ca":8,"p":8},{"f":"Alexander Carvajal","w":"SM","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":61,"pp":1,"ca":8,"p":8},{"f":"Maria Blanco","w":"SF","d":"2022-01-29T00:00:00","c":"CM Plovdiv","k":6,"pl":57,"pp":1,"ca":26,"p":26},{"f":"Linda Gonzalez","w":"SF","d":"2022-01-29T00:00:00","c":"CM Plovdiv","k":6,"pl":72,"pp":1,"ca":20,"p":20},{"f":"Valentina Beltran","w":"SF","d":"2022-01-29T00:00:00","c":"CM Plovdiv","k":6,"pl":131,"pp":0,"ca":8,"p":0},{"f":"Linda Klimavicius","w":"SF","d":"2022-02-06T00:00:00","c":"Joue les Tours","k":3,"pl":31,"pp":1,"ca":14,"p":14},{"f":"Jorge Murillo","w":"FM","d":"2022-01-14T00:00:00","c":"CM Paris","k":6,"pl":173,"pp":1,"ca":2,"p":2},{"f":"Dimitri Clairet","w":"FM","d":"2022-01-14T00:00:00","c":"CM Paris","k":6,"pl":190,"pp":0,"ca":2,"p":0},{"f":"Miguel Grajales","w":"FM","d":"2022-01-14T00:00:00","c":"CM Paris","k":6,"pl":203,"pp":0,"ca":2,"p":0},{"f":"Dimitri Clairet","w":"FM","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":109,"pp":1,"ca":-4,"p":0},{"f":"Miguel Grajales","w":"FM","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":133,"pp":1,"ca":-10,"p":0},{"f":"Fabian Parra","w":"FM","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":158,"pp":1,"ca":-10,"p":0},{"f":"Jorge Murillo","w":"FM","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":163,"pp":1,"ca":-16,"p":0},{"f":"Laura Guerra","w":"FF","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":59,"pp":1,"ca":8,"p":8},{"f":"Juliana Pineda","w":"FF","d":"2022-02-06T00:00:00","c":"Bourg la Reine","k":3,"pl":94,"pp":1,"ca":2,"p":2},{"f":"Tatiana Prieto","w":"FF","d":"2022-02-25T00:00:00","c":"CM Guadalajara","k":6,"pl":127,"pp":0,"ca":14,"p":0},{"f":"Maria Figueredo","w":"FF","d":"2022-02-25T00:00:00","c":"CM Guadalajara","k":6,"pl":117,"pp":1,"ca":14,"p":14},{"f":"Angela Orjuela","w":"FF","d":"2022-02-25T00:00:00","c":"CM Guadalajara","k":6,"pl":138,"pp":0,"ca":8,"p":0},{"f":"Maria Blanco","w":"SF","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":7,"pp":1,"ca":26,"p":26},{"f":"Valentina Beltran","w":"SF","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":29,"pp":1,"ca":14,"p":14},{"f":"Linda Klimavicius","w":"SF","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":21,"pp":1,"ca":14,"p":14},{"f":"Linda Gonzalez","w":"SF","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":27,"pp":1,"ca":14,"p":14},{"f":"Luis Correa Vila","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":32,"pp":1,"ca":14,"p":14},{"f":"Sebastian Cuellar","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":39,"pp":1,"ca":8,"p":8},{"f":"Edwin Gonzalez","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":56,"pp":1,"ca":8,"p":8},{"f":"Mario Palacios","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":33,"pp":1,"ca":8,"p":8},{"f":"Wilber Restrepo","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":44,"pp":1,"ca":8,"p":8},{"f":"Pablo Trochez","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":31,"pp":1,"ca":14,"p":14},{"f":"Camilo Mosquera","w":"SM","d":"2022-02-27T00:00:00","c":"SUB 23 Estrasburgo","k":3,"pl":68,"pp":1,"ca":2,"p":2},{"f":"Jhon Rodriguez","w":"EM","d":"2022-03-04T00:00:00","c":"Gran Prix Budapest","k":6,"pl":68,"pp":1,"ca":20,"p":20},{"f":"Andres Campos","w":"EM","d":"2022-03-04T00:00:00","c":"Gran Prix Budapest","k":6,"pl":88,"pp":1,"ca":20,"p":20},{"f":"Maria Blanco","w":"SF","d":"2022-03-04T00:00:00","c":"CM Atenas","k":6,"pl":126,"pp":0,"ca":14,"p":0},{"f":"Maria fda Gutierrez","w":"SF","d":"2022-03-04T00:00:00","c":"CM Atenas","k":6,"pl":130,"pp":0,"ca":8,"p":0},{"f":"Linda Gonzalez","w":"SF","d":"2022-03-04T00:00:00","c":"CM Atenas","k":6,"pl":83,"pp":1,"ca":20,"p":20},{"f":"Linda Klimavicius","w":"SF","d":"2022-03-04T00:00:00","c":"CM Atenas","k":6,"pl":132,"pp":0,"ca":8,"p":0},{"f":"Valentina Beltran","w":"SF","d":"2022-03-04T00:00:00","c":"CM Atenas","k":6,"pl":93,"pp":1,"ca":20,"p":20},{"f":"Jaime Rodriguez","w":"EM","d":"2022-03-04T00:00:00","c":"Gran Prix Budapest","k":6,"pl":237,"pp":0,"ca":2,"p":0},{"f":"Hernando Roa","w":"EM","d":"2022-01-15T00:00:00","c":"CN Frances Lisieux","k":3,"pl":80,"pp":1,"ca":2,"p":2},{"f":"Mario Caceres","w":"EM","d":"2022-01-15T00:00:00","c":"CN Frances Lisieux","k":3,"pl":22,"pp":1,"ca":14,"p":14},{"f":"Jhon Rodriguez","w":"EM","d":"2022-01-15T00:00:00","c":"CN Frances Lisieux","k":3,"pl":43,"pp":1,"ca":8,"p":8},{"f":"Maria Jaramillo","w":"EF","d":"2022-03-05T00:00:00","c":"Gran Prix Budapest","k":6,"pl":53,"pp":1,"ca":26,"p":26},{"f":"Eliana Caicedo","w":"EF","d":"2022-03-05T00:00:00","c":"Gran Prix Budapest","k":6,"pl":157,"pp":1,"ca":8,"p":8},{"f":"Oriana Tovar","w":"EF","d":"2022-03-05T00:00:00","c":"Gran Prix Budapest","k":6,"pl":140,"pp":1,"ca":8,"p":8},{"f":"Maria Jaramillo","w":"EF","d":"2022-03-12T00:00:00","c":"CN Frances Nantes","k":3,"pl":20,"pp":1,"ca":14,"p":14},{"f":"Valentina Triana","w":"EF","d":"2022-03-12T00:00:00","c":"CN Frances Nantes","k":3,"pl":45,"pp":1,"ca":8,"p":8},{"f":"Alejandra Piedrahita","w":"EF","d":"2022-03-12T00:00:00","c":"CN Frances Nantes","k":3,"pl":36,"pp":1,"ca":8,"p":8},{"f":"Luis Correa Vila","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":16,"pp":1,"ca":20,"p":20},{"f":"Sebastian Cuellar","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":17,"pp":1,"ca":14,"p":14},{"f":"Mario Palacios","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":21,"pp":1,"ca":14,"p":14},{"f":"Camilo Mosquera","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":45,"pp":1,"ca":8,"p":8},{"f":"Wilber Restrepo","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":44,"pp":1,"ca":8,"p":8},{"f":"Nicolas Illera","w":"SM","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":51,"pp":1,"ca":8,"p":8},{"f":"Linda Gonzalez","w":"SF","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":23,"pp":1,"ca":14,"p":14},{"f":"Linda Klimavicius","w":"SF","d":"2022-03-12T00:00:00","c":"CN Frances Roubaix","k":3,"pl":26,"pp":1,"ca":14,"p":14},{"f":"Alejandro Pinzon","w":"SM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":93,"pp":0,"ca":2,"p":0},{"f":"Edwin Gonzalez","w":"SM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":37,"pp":1,"ca":8,"p":8},{"f":"Alexander Carvajal","w":"SM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":71,"pp":1,"ca":2,"p":2},{"f":"Maria Blanco","w":"SF","d":"2022-03-13T00:00:00","c":"CN Italiano Lucca","k":3,"pl":31,"pp":1,"ca":14,"p":14},{"f":"Valentina Beltran","w":"SF","d":"2022-03-13T00:00:00","c":"CN Italiano Lucca","k":3,"pl":65,"pp":1,"ca":2,"p":2},{"f":"Maria fda Gutierrez","w":"SF","d":"2022-03-13T00:00:00","c":"CN Italiano Lucca","k":3,"pl":37,"pp":1,"ca":8,"p":8},{"f":"Wendy Testa","w":"FF","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":48,"pp":1,"ca":8,"p":8},{"f":"Laura Guerra","w":"FF","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":60,"pp":1,"ca":8,"p":8},{"f":"Tatiana Prieto","w":"FF","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":70,"pp":1,"ca":2,"p":2},{"f":"Angela Orjuela","w":"FF","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":90,"pp":0,"ca":2,"p":0},{"f":"Juliana Pineda","w":"FF","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":75,"pp":1,"ca":2,"p":2},{"f":"Sebastian Uribe","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":105,"pp":1,"ca":-4,"p":0},{"f":"Daniel Pinto","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":107,"pp":0,"ca":-4,"p":0},{"f":"Santiago Pachon","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":103,"pp":1,"ca":-4,"p":0},{"f":"Miguel Grajales","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":42,"pp":1,"ca":8,"p":8},{"f":"Jorge Murillo","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":79,"pp":1,"ca":2,"p":2},{"f":"David Ospina","w":"FM","d":"2022-03-12T00:00:00","c":"CN Italiano Lucca","k":3,"pl":75,"pp":1,"ca":2,"p":2},{"f":"Luis Correa Vila","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":162,"pp":0,"ca":2,"p":0},{"f":"Sebastian Cuellar","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":105,"pp":1,"ca":14,"p":14},{"f":"Mario Palacios","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":80,"pp":1,"ca":20,"p":20},{"f":"Edwin Gonzalez","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":173,"pp":0,"ca":2,"p":0},{"f":"Wilber Restrepo","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":181,"pp":0,"ca":2,"p":0},{"f":"Alexander Carvajal","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":176,"pp":0,"ca":2,"p":0},{"f":"Camilo Mosquera","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":205,"pp":0,"ca":2,"p":0},{"f":"Pablo Trochez","w":"SM","d":"2022-03-18T00:00:00","c":"CM BUDAPEST","k":6,"pl":183,"pp":0,"ca":2,"p":0},{"f":"Daniel Pinto","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":34,"pp":1,"ca":8,"p":8},{"f":"Dimitri Clairet","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":23,"pp":1,"ca":14,"p":14},{"f":"Jorge Murillo","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":31,"pp":1,"ca":14,"p":14},{"f":"Miguel Grajales","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":26,"pp":1,"ca":14,"p":14},{"f":"Fabian Parra","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":37,"pp":1,"ca":8,"p":8},{"f":"Santiago Pachon","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":20,"pp":1,"ca":14,"p":14},{"f":"Sebastian Uribe","w":"FM","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":30,"pp":1,"ca":14,"p":14},{"f":"Juliana Pineda","w":"FF","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":19,"pp":1,"ca":14,"p":14},{"f":"Tatiana Prieto","w":"FF","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":15,"pp":1,"ca":20,"p":20},{"f":"Laura Guerra","w":"FF","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":11,"pp":1,"ca":20,"p":20},{"f":"Angela Orjuela","w":"FF","d":"2022-03-19T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":18,"pp":1,"ca":14,"p":14},{"f":"Juliana Pineda","w":"FF","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":63,"pp":1,"ca":8,"p":8},{"f":"Tatiana Prieto","w":"FF","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":35,"pp":1,"ca":8,"p":8},{"f":"Laura Guerra","w":"FF","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":71,"pp":1,"ca":2,"p":2},{"f":"Angela Orjuela","w":"FF","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":81,"pp":1,"ca":2,"p":2},{"f":"Dimitri Clairet","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":72,"pp":1,"ca":2,"p":2},{"f":"Fabian Parra","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":112,"pp":1,"ca":-4,"p":0},{"f":"Santiago Pachon","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":93,"pp":1,"ca":2,"p":2},{"f":"Sebastian Uribe","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":81,"pp":1,"ca":2,"p":2},{"f":"Jorge Murillo","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":161,"pp":1,"ca":-16,"p":0},{"f":"Miguel Grajales","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":17,"pp":1,"ca":14,"p":14},{"f":"Daniel Pinto","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":99,"pp":1,"ca":-4,"p":0},{"f":"Maria Blanco","w":"SF","d":"2022-03-27T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":7,"pp":1,"ca":26,"p":26},{"f":"Maria fda Gutierrez","w":"SF","d":"2022-03-27T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":11,"pp":1,"ca":20,"p":20},{"f":"Linda Klimavicius","w":"SF","d":"2022-03-27T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":12,"pp":1,"ca":20,"p":20},{"f":"Linda Gonzalez","w":"SF","d":"2022-03-27T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":15,"pp":1,"ca":20,"p":20},{"f":"Sebastian Cuellar","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":12,"pp":1,"ca":20,"p":20},{"f":"Mario Palacios","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":46,"pp":1,"ca":8,"p":8},{"f":"Luis Correa Vila","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":21,"pp":1,"ca":14,"p":14},{"f":"Wilber Restrepo","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":8,"pp":1,"ca":26,"p":26},{"f":"Nicolas Illera","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":11,"pp":1,"ca":20,"p":20},{"f":"Edwin Gonzalez","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":36,"pp":1,"ca":8,"p":8},{"f":"Camilo Mosquera","w":"SM","d":"2022-03-26T00:00:00","c":"CN ESPAÑOL TNR","k":3,"pl":63,"pp":0,"ca":8,"p":0},{"f":"Hernando Roa","w":"EM","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":11,"pp":1,"ca":20,"p":20},{"f":"Mario Caceres","w":"EM","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":46,"pp":1,"ca":8,"p":8},{"f":"Daniel Perez","w":"EM","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":66,"pp":1,"ca":2,"p":2},{"f":"Andres Campos","w":"EM","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":40,"pp":1,"ca":8,"p":8},{"f":"Eliana Caicedo","w":"EF","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":53,"pp":1,"ca":8,"p":8},{"f":"Oriana Tovar","w":"EF","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":21,"pp":1,"ca":14,"p":14},{"f":"Susana Salazar","w":"EF","d":"2022-03-26T00:00:00","c":"Sub 23 Lausanne","k":3,"pl":76,"pp":0,"ca":2,"p":0},{"f":"Tomas Vargas","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":106,"pp":1,"ca":-4,"p":0},{"f":"Mario Caceres","w":"EM","d":"2022-04-09T00:00:00","c":"CN FRANCES NIMES","k":3,"pl":38,"pp":1,"ca":8,"p":8},{"f":"Hernando Roa","w":"EM","d":"2022-04-09T00:00:00","c":"CN FRANCES NIMES","k":3,"pl":57,"pp":1,"ca":8,"p":8},{"f":"Jhon Rodriguez","w":"EM","d":"2022-04-09T00:00:00","c":"CN FRANCES NIMES","k":3,"pl":3,"pp":1,"ca":32,"p":32},{"f":"Maria Jaramillo","w":"EF","d":"2022-04-16T00:00:00","c":"CN FRANCES ORNON","k":3,"pl":14,"pp":1,"ca":20,"p":20},{"f":"Alejandra Piedrahita","w":"EF","d":"2022-04-16T00:00:00","c":"CN FRANCES ORNON","k":3,"pl":54,"pp":1,"ca":8,"p":8},{"f":"Valentina Triana","w":"EF","d":"2022-04-16T00:00:00","c":"CN FRANCES ORNON","k":3,"pl":52,"pp":1,"ca":8,"p":8},{"f":"David Ospina","w":"FM","d":"2022-04-09T00:00:00","c":"CNF MELUN SABADO","k":3,"pl":27,"pp":1,"ca":14,"p":14},{"f":"David Ospina","w":"FM","d":"2022-04-10T00:00:00","c":"CNF MELUN DOMINGO","k":3,"pl":36,"pp":1,"ca":8,"p":8},{"f":"Miguel Grajales","w":"FM","d":"2022-04-10T00:00:00","c":"CNF MELUN DOMINGO","k":3,"pl":46,"pp":1,"ca":8,"p":8},{"f":"Tatiana Prieto","w":"FF","d":"2022-04-10T00:00:00","c":"CNF MELUN DOMINGO","k":3,"pl":58,"pp":1,"ca":8,"p":8},{"f":"Juliana Pineda","w":"FF","d":"2022-04-10T00:00:00","c":"CNF MELUN DOMINGO","k":3,"pl":52,"pp":1,"ca":8,"p":8},{"f":"Jhon Rodriguez","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":214,"pp":1,"ca":2,"p":2},{"f":"Hernando Roa","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":106,"pp":1,"ca":14,"p":14},{"f":"Daniel Perez","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":272,"pp":0,"ca":0,"p":0},{"f":"Juan Castillo","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":211,"pp":1,"ca":2,"p":2},{"f":"Andres Campos","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":130,"pp":1,"ca":8,"p":8},{"f":"Mario Caceres","w":"EM","d":"2022-04-15T00:00:00","c":"CM MONAL","k":6,"pl":249,"pp":0,"ca":2,"p":0},{"f":"Carmen Correa","w":"EF","d":"2022-04-16T00:00:00","c":"CN FRANCES ORNON","k":3,"pl":43,"pp":1,"ca":8,"p":8},{"f":"Tatiana Prieto","w":"FF","d":"2022-04-15T00:00:00","c":"CM BELGRADO","k":6,"pl":143,"pp":0,"ca":8,"p":0},{"f":"Laura Guerra","w":"FF","d":"2022-04-15T00:00:00","c":"CM BELGRADO","k":6,"pl":130,"pp":1,"ca":8,"p":8},{"f":"Juliana Pineda","w":"FF","d":"2022-04-15T00:00:00","c":"CM BELGRADO","k":6,"pl":146,"pp":0,"ca":8,"p":0},{"f":"Angela Orjuela","w":"FF","d":"2022-04-15T00:00:00","c":"CM BELGRADO","k":6,"pl":167,"pp":0,"ca":2,"p":0},{"f":"Santiago Pachon","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":194,"pp":0,"ca":2,"p":0},{"f":"Miguel Grajales","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":183,"pp":0,"ca":2,"p":0},{"f":"Jorge Murillo","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":207,"pp":0,"ca":2,"p":0},{"f":"David Ospina","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":153,"pp":1,"ca":8,"p":8},{"f":"Sebastian Uribe","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":193,"pp":0,"ca":2,"p":0},{"f":"Daniel Pinto","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":205,"pp":0,"ca":2,"p":0},{"f":"Tomas Vargas","w":"FM","d":"2022-04-16T00:00:00","c":"CM BELGRADO","k":6,"pl":207,"pp":0,"ca":2,"p":0},{"f":"Mario Fang","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Luis Correa Vila","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Jacob Cardona","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Edwin Gonzalez","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Samuel Gualtero","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Camilo Mosquera","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":7,"pp":1,"ca":14,"p":14},{"f":"Jonathan Morales","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Alejandro Pinzon","w":"SM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":9,"pp":1,"ca":8,"p":8},{"f":"Hernando Roa","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":1,"pp":1,"ca":32,"p":32},{"f":"Kevin Restrepo","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Mario Caceres","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Manuel Reyes","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Alex Roberto Nagles","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Pablo Zapata","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":7,"pp":1,"ca":14,"p":14},{"f":"Michael Lozano","w":"EM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Tatiana Prieto","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":1,"pp":1,"ca":32,"p":32},{"f":"Laura Guerra","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Juliana Pineda","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Maria Figueredo","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Luis Fda Rincon","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Angela Orjuela","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":7,"pp":1,"ca":14,"p":14},{"f":"Carolina Vargas","w":"FF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Jessica Morales","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":1,"pp":1,"ca":32,"p":32},{"f":"Linda Gonzalez","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Maria fda Gutierrez","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Linda Klimavicius","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Maria Blanco","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Ana Maria Alderete","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Eyllen Cuellar","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":7,"pp":1,"ca":14,"p":14},{"f":"Valentina Beltran","w":"SF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Santiago Pachon","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":1,"pp":1,"ca":32,"p":32},{"f":"Tomas Vargas","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Miguel Grajales","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Dimitri Clairet","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Juan D Sanchez","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Jorge Murillo","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Alejandro Bolaños","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":7,"pp":1,"ca":14,"p":14},{"f":"Pedro Sanchez","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Daniel Pinto","w":"FM","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":10,"pp":1,"ca":8,"p":8},{"f":"Alejandra Piedrahita","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":1,"pp":1,"ca":32,"p":32},{"f":"Susana Salazar","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":2,"pp":1,"ca":26,"p":26},{"f":"Nianpira Castro","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Natalia Lozano","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":3,"pp":1,"ca":20,"p":20},{"f":"Oriana Tovar","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":5,"pp":1,"ca":14,"p":14},{"f":"Maria Ramos","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":6,"pp":1,"ca":14,"p":14},{"f":"Maria Nusa","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":8,"pp":1,"ca":14,"p":14},{"f":"Eliana Caicedo","w":"EF","d":"2022-04-24T00:00:00","c":"Copa Elite Cali","k":1,"pl":9,"pp":1,"ca":8,"p":8},{"f":"Jhon Rodriguez","w":"EM","d":"2022-04-30T00:00:00","c":"CRAN PRIX CAIRO","k":6,"pl":49,"pp":1,"ca":26,"p":26},{"f":"Hernando Roa","w":"EM","d":"2022-04-30T00:00:00","c":"CRAN PRIX CAIRO","k":6,"pl":170,"pp":0,"ca":2,"p":0}];
+
+// ═══════════════ CONFIG ═══════════════
+const WEAPONS = [
+  {code:'EF',label:'Espada',gender:'Femenino'},
+  {code:'EM',label:'Espada',gender:'Masculino'},
+  {code:'SF',label:'Sable',gender:'Femenino'},
+  {code:'SM',label:'Sable',gender:'Masculino'},
+  {code:'FF',label:'Florete',gender:'Femenino'},
+  {code:'FM',label:'Florete',gender:'Masculino'}
+];
+const CHART_COLORS=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#264653','#A8DADC','#D4A373'];
+const LS_KEY='fencing-ranking-2022-v2';
+const PASSWORD='elDT_2026';
+
+// ═══════════════ STATE ═══════════════
+let data=[];
+let activeWeapon='EF';
+let chartInstance=null;
+let updatedDate=null;
+
+function loadData(){
+  try{
+    const stored=localStorage.getItem(LS_KEY);
+    if(stored){
+      const parsed=JSON.parse(stored);
+      if(parsed.records&&parsed.records.length){
+        data=parsed.records;
+        updatedDate=parsed.updatedAt||null;
+        return;
+      }
+    }
+  }catch(e){}
+  data=DEFAULT_DATA;
+  updatedDate=null;
+}
+
+function saveData(records){
+  const now=new Date().toISOString();
+  localStorage.setItem(LS_KEY,JSON.stringify({records,updatedAt:now}));
+  data=records;
+  updatedDate=now;
+}
+
+// ═══════════════ DATA PROCESSING ═══════════════
+function getWeaponData(weaponCode){
+  const recs=data.filter(r=>r.w===weaponCode);
+  // Get competitions sorted chronologically
+  const compMap=new Map();
+  recs.forEach(r=>{
+    if(!compMap.has(r.c)||new Date(r.d)<compMap.get(r.c))
+      compMap.set(r.c,new Date(r.d));
+  });
+  const competitions=[...compMap.entries()].sort((a,b)=>a[1]-b[1]).map(e=>e[0]);
+
+  // Group by fencer — track participation separately
+  const fencerMap=new Map();
+  recs.forEach(r=>{
+    if(!fencerMap.has(r.f)) fencerMap.set(r.f,new Map());
+    const fm=fencerMap.get(r.f);
+    fm.set(r.c,(fm.get(r.c)||0)+r.p);
+  });
+
+  // Build fencer rows — null means didn't participate, 0 means participated with 0 pts
+  const fencers=[];
+  fencerMap.forEach((compPoints,name)=>{
+    let total=0;
+    const pts={};
+    competitions.forEach(c=>{
+      if(compPoints.has(c)){const v=compPoints.get(c);pts[c]=v;total+=v;}
+      else{pts[c]=null;}
+    });
+    fencers.push({name,pts,total});
+  });
+  fencers.sort((a,b)=>b.total-a.total);
+  return{competitions,fencers};
+}
+
+// ═══════════════ RENDER ═══════════════
+function updateHeader(){
+  const fencerSet=new Set(data.map(r=>r.f));
+  let sub=`Selección Colombiana de Esgrima · ${data.length} registros · ${fencerSet.size} esgrimistas`;
+  if(updatedDate){
+    const d=new Date(updatedDate);
+    sub+=` · Actualizado ${d.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}`;
+  }
+  document.getElementById('headerSub').textContent=sub;
+}
+
+function renderTabs(){
+  const bar=document.getElementById('tabsBar');
+  bar.innerHTML='';
+  WEAPONS.forEach(w=>{
+    const count=data.filter(r=>r.w===w.code).length;
+    const btn=document.createElement('button');
+    btn.className='tab'+(activeWeapon===w.code?' active':'');
+    const icon=w.gender==='Femenino'?'♀':'♂';
+    btn.innerHTML=`<span class="icon">${icon}</span>${w.label}<span class="badge">${count}</span>`;
+    btn.onclick=()=>{activeWeapon=w.code;render()};
+    bar.appendChild(btn);
+  });
+}
+
+function renderSectionTitle(){
+  const w=WEAPONS.find(w=>w.code===activeWeapon);
+  document.getElementById('sectionTitle').textContent=`${w.label} — ${w.gender}`;
+}
+
+function renderTable(){
+  const{competitions,fencers}=getWeaponData(activeWeapon);
+  const thead=document.querySelector('#rankTable thead');
+  const tbody=document.querySelector('#rankTable tbody');
+
+  // Header
+  let hhtml='<tr><th class="col-rank">#</th><th class="col-name">Esgrimista</th>';
+  competitions.forEach(c=>{
+    hhtml+=`<th class="col-comp" title="${c}">${c}</th>`;
+  });
+  hhtml+='<th class="col-total">TOTAL</th></tr>';
+  thead.innerHTML=hhtml;
+
+  // Body
+  let bhtml='';
+  fencers.forEach((f,i)=>{
+    const rank=i+1;
+    let rowClass,rankClass;
+    if(rank===1){rowClass='row-1';rankClass='rank-1'}
+    else if(rank===2){rowClass='row-2';rankClass='rank-2'}
+    else if(rank===3){rowClass='row-3';rankClass='rank-3'}
+    else if(rank===4){rowClass='row-4';rankClass='rank-4'}
+    else{rowClass=rank%2===1?'row-odd':'row-even';rankClass='rank-default'}
+
+    bhtml+=`<tr class="${rowClass}">`;
+    bhtml+=`<td class="cell-rank ${rankClass}">${rank}</td>`;
+    bhtml+=`<td class="cell-name">${f.name}</td>`;
+    competitions.forEach(c=>{
+      const v=f.pts[c];
+      if(v===null) bhtml+=`<td class="cell-pts empty">–</td>`;
+      else bhtml+=`<td class="cell-pts">${v}</td>`;
+    });
+    bhtml+=`<td class="cell-total">${f.total}</td>`;
+    bhtml+=`</tr>`;
+  });
+  tbody.innerHTML=bhtml;
+}
+
+function renderChart(){
+  if(chartInstance){chartInstance.destroy();chartInstance=null}
+  const{competitions,fencers}=getWeaponData(activeWeapon);
+  const top8=fencers.slice(0,8);
+  if(!top8.length)return;
+
+  const labels=competitions.map(c=>c.length>15?c.slice(0,15)+'…':c);
+  const datasets=top8.map((f,i)=>{
+    let cum=0;
+    const pts=competitions.map(c=>{cum+=f.pts[c]||0;return cum});
+    return{
+      label:f.name,
+      data:pts,
+      borderColor:CHART_COLORS[i%CHART_COLORS.length],
+      backgroundColor:CHART_COLORS[i%CHART_COLORS.length]+'33',
+      borderWidth:2.5,
+      pointRadius:3,
+      pointHoverRadius:5,
+      tension:0.35,
+      fill:false
+    };
+  });
+
+  const ctx=document.getElementById('chartCanvas').getContext('2d');
+  chartInstance=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#5a6a7a',font:{size:11,family:'DM Sans'},boxWidth:14,padding:12}},
+        tooltip:{
+          backgroundColor:'#16163a',
+          borderColor:'#2a2a50',
+          borderWidth:1,
+          cornerRadius:8,
+          titleFont:{size:12,family:'DM Sans'},
+          bodyFont:{size:12,family:'DM Sans'},
+          titleColor:'#ccd0e0',
+          bodyColor:'#ccd0e0',
+          padding:10
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'#5a6a7a',font:{size:9,family:'DM Sans'},maxRotation:40,minRotation:40},
+          grid:{color:'rgba(255,255,255,0.04)',drawBorder:false,borderDash:[4,4]}
+        },
+        y:{
+          ticks:{color:'#5a6a7a',font:{size:11,family:'DM Sans'}},
+          grid:{color:'rgba(255,255,255,0.04)',drawBorder:false,borderDash:[4,4]}
+        }
+      }
+    }
+  });
+}
+
+function render(){
+  updateHeader();
+  renderTabs();
+  renderSectionTitle();
+  renderTable();
+  renderChart();
+}
+
+// ═══════════════ MODAL ═══════════════
+const modal=document.getElementById('modal');
+const modalBox=document.getElementById('modalBox');
+const modalContent=document.getElementById('modalContent');
+
+function openModal(){modal.classList.add('open');showPasswordStep()}
+function closeModal(){modal.classList.remove('open')}
+
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+document.getElementById('modalClose').addEventListener('click',closeModal);
+document.getElementById('btnUpdate').addEventListener('click',openModal);
+
+function showPasswordStep(){
+  modalContent.innerHTML=`
+    <div class="modal-title">🔐 Acceso Administrador</div>
+    <div class="modal-desc">Ingresa la contraseña para subir nuevos datos.</div>
+    <input type="password" class="modal-input" id="pwInput" placeholder="Contraseña" autocomplete="off">
+    <div class="modal-error" id="pwError"></div>
+    <button class="modal-btn modal-btn-gold" id="pwSubmit">Ingresar</button>
+  `;
+  const inp=document.getElementById('pwInput');
+  const err=document.getElementById('pwError');
+  const btn=document.getElementById('pwSubmit');
+  const submit=()=>{
+    if(inp.value===PASSWORD){showUploadStep()}
+    else{inp.classList.add('error');err.textContent='Contraseña incorrecta.'}
+  };
+  btn.onclick=submit;
+  inp.onkeydown=e=>{if(e.key==='Enter')submit()};
+  inp.oninput=()=>{inp.classList.remove('error');err.textContent=''};
+  setTimeout(()=>inp.focus(),100);
+}
+
+function showUploadStep(){
+  modalContent.innerHTML=`
+    <div class="modal-title">📁 Subir Datos</div>
+    <div class="modal-desc">Archivo .xlsx con una sola hoja y la tabla maestra de ranking.</div>
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">📂</div>
+      <div class="dropzone-text">Arrastra y suelta tu archivo .xlsx aquí</div>
+      <div class="dropzone-sub">o haz clic para buscar</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+    <div class="modal-error" id="uploadError"></div>
+  `;
+  const dz=document.getElementById('dropzone');
+  const fi=document.getElementById('fileInput');
+  dz.onclick=()=>fi.click();
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
+  dz.ondragleave=()=>dz.classList.remove('over');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files.length)processFile(e.dataTransfer.files[0])};
+  fi.onchange=()=>{if(fi.files.length)processFile(fi.files[0])};
+  // Load SheetJS dynamically
+  if(!window.XLSX){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    document.head.appendChild(s);
+  }
+}
+
+function processFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext!=='xlsx'&&ext!=='xls'){
+    document.getElementById('uploadError').textContent='El archivo debe ser .xlsx o .xls';
+    return;
+  }
+  showProcessingStep(file.name);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const sheets=wb.SheetNames;
+      if(sheets.length!==1){
+        showErrorStep(`El archivo debe tener exactamente 1 hoja. Se encontraron ${sheets.length}.`);
+        return;
+      }
+      const ws=wb.Sheets[sheets[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length){showErrorStep('No se encontraron registros válidos.');return;}
+
+      const required=['Esgrimista','arma','Fecha','competencia','coeficiente','puesto','pasó poules','calculo','puntos'];
+      const cols=Object.keys(rows[0]);
+      const missing=required.filter(r=>!cols.some(c=>c.trim().toLowerCase()===r.toLowerCase()));
+      if(missing.length){showErrorStep(`Columnas faltantes: ${missing.join(', ')}`);return;}
+
+      // Map rows
+      const records=[];
+      rows.forEach(r=>{
+        const f=(r['Esgrimista']||'').toString().trim();
+        if(!f)return;
+        let fecha=r['Fecha'];
+        let dateStr;
+        if(fecha instanceof Date) dateStr=fecha.toISOString();
+        else if(typeof fecha==='number'){
+          const d=new Date(Math.round((fecha-25569)*86400*1000));
+          dateStr=d.toISOString();
+        }else dateStr=new Date(fecha).toISOString();
+
+        const p=parseFloat(r['puntos'])||0;
+        records.push({
+          f,
+          w:(r['arma']||'').toString().trim(),
+          d:dateStr,
+          c:(r['competencia']||'').toString().trim(),
+          k:parseInt(r['coeficiente'])||0,
+          pl:parseInt(r['puesto'])||0,
+          pp:parseInt(r['pasó poules'])||0,
+          ca:parseFloat(r['calculo'])||0,
+          p:p<0?0:p
+        });
+      });
+      if(!records.length){showErrorStep('No se encontraron registros válidos.');return;}
+      saveData(records);
+      render();
+      showSuccessStep(file.name);
+    }catch(err){
+      showErrorStep('Error procesando el archivo: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showProcessingStep(fname){
+  modalContent.innerHTML=`<div class="step-center"><div class="spinner">⚙️</div><div style="margin-top:12px;color:#8a8aaa;font-size:13px">Procesando ${fname}…</div></div>`;
+}
+function showSuccessStep(fname){
+  modalContent.innerHTML=`<div class="step-center"><div class="step-icon">✅</div><div class="modal-title" style="color:#2A9D8F">¡Actualizado!</div><div class="modal-desc">${fname} cargado exitosamente.</div><button class="modal-btn modal-btn-teal" onclick="closeModal()">Listo</button></div>`;
+}
+function showErrorStep(msg){
+  modalContent.innerHTML=`<div class="step-center"><div class="step-icon">❌</div><div class="modal-title" style="color:#E63946">Error al Subir</div><div class="modal-desc" style="color:#b0b0c0">${msg}</div><button class="modal-btn modal-btn-dark" onclick="showUploadStep()">Intentar de Nuevo</button></div>`;
+}
+
+// ═══════════════ INIT ═══════════════
+loadData();
+render();
+</script>
+</body>
+</html>
