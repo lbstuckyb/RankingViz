@@ -74,7 +74,7 @@ Copia los dos archivos en la carpeta del repositorio. Renombra el HTML a `index.
 
 ```
 TU_REPOSITORIO/
-├── index.html      ← (era ranking_selectivo_2022.html)
+├── index.html 
 └── README.md
 ```
 
