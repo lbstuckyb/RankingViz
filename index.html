@@ -3,102 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ranking Selectivo — Esgrima Colombia</title>
+<title>Ranking Selectivo 2026 — Federación Colombiana de Esgrima</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body{background:#09091a;color:#b0b0c0;font-family:'DM Sans',sans-serif;min-height:100vh}
+body{background:#ffffff;color:#3a3a4a;font-family:'DM Sans',sans-serif;min-height:100vh}
 ::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:#09091a}
-::-webkit-scrollbar-thumb{background:#222244;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#333366}
+::-webkit-scrollbar-track{background:#f0f0f4}
+::-webkit-scrollbar-thumb{background:#c0c0d0;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#a0a0b8}
 
 /* HEADER */
 .header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px 12px;flex-wrap:wrap;gap:12px}
 .header-left{}
-.header-title{font-size:26px;font-weight:800;color:#e8e8f0;letter-spacing:-0.5px}
+.header-title{font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-0.5px}
 .header-title .sword{color:#e0a526}
-.header-sub{font-family:'DM Mono',monospace;font-size:12px;color:#4a5a6a;margin-top:3px}
-.btn-update{padding:7px 16px;background:rgba(224,165,38,0.1);border:1px solid rgba(224,165,38,0.25);border-radius:8px;color:#e0a526;font-weight:600;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
-.btn-update:hover{background:rgba(224,165,38,0.22)}
+.header-sub{font-family:'DM Mono',monospace;font-size:12px;color:#7a8a9a;margin-top:3px}
+.btn-update{padding:7px 16px;background:rgba(224,165,38,0.08);border:1px solid rgba(224,165,38,0.3);border-radius:8px;color:#b8860b;font-weight:600;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.btn-update:hover{background:rgba(224,165,38,0.18)}
 
 /* TABS */
 .tabs-wrap{padding:8px 28px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tabs-wrap::-webkit-scrollbar{height:0}
 .tabs{display:flex;gap:8px;min-width:max-content}
 .tab{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .2s;white-space:nowrap}
-.tab.active{background:linear-gradient(135deg,#e0a526,#c48a10);color:#0d0d1a;font-weight:700;outline:none}
-.tab:not(.active){background:rgba(255,255,255,0.035);color:#6a7a8a;outline:1px solid rgba(255,255,255,0.05)}
-.tab:not(.active):hover{background:rgba(255,255,255,0.06)}
+.tab.active{background:linear-gradient(135deg,#e0a526,#c48a10);color:#fff;font-weight:700;outline:none}
+.tab:not(.active){background:#f4f4f8;color:#5a6a7a;outline:1px solid #e0e0ea}
+.tab:not(.active):hover{background:#eaeaf0}
 .tab .icon{font-size:14px}
 .tab .badge{font-size:9.5px;padding:1px 4px;border-radius:4px;font-weight:600;margin-left:2px}
-.tab.active .badge{background:rgba(0,0,0,0.2);color:#0d0d1a}
-.tab:not(.active) .badge{background:rgba(255,255,255,0.06);color:#5a6a7a}
+.tab.active .badge{background:rgba(255,255,255,0.3);color:#fff}
+.tab:not(.active) .badge{background:#e0e0ea;color:#7a8a9a}
 
 /* SECTION TITLE */
 .section-title-wrap{padding:22px 28px 0}
-.section-title{font-size:19px;font-weight:700;color:#dde0f0}
+.section-title{font-size:19px;font-weight:700;color:#1a1a2e}
 .section-bar{width:44px;height:3px;background:#e0a526;border-radius:2px;margin-top:8px}
 
 /* TABLE */
 .table-wrap{padding:18px 28px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;min-width:500px}
-thead th{background:#111128;color:#6a7a8a;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border-bottom:2px solid #222244;position:sticky;top:0;z-index:2}
+thead th{background:#f4f4f8;color:#6a7a8a;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border-bottom:2px solid #d8d8e4;position:sticky;top:0;z-index:2}
 th.col-rank{width:32px;text-align:center}
 th.col-name{text-align:left;min-width:130px}
 th.col-comp{font-size:9px;writing-mode:vertical-rl;text-orientation:mixed;height:90px;padding:6px 3px;white-space:nowrap;max-width:28px}
-th.col-total{background:#18182e;color:#e0a526;min-width:52px;text-align:center}
-td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;text-align:center}
+th.col-total{background:#eeeef4;color:#b8860b;min-width:52px;text-align:center}
+td{padding:5px 6px;border-bottom:1px solid #ededf2;font-size:13px;text-align:center}
 td.cell-rank{font-weight:700;font-size:14px;text-align:center}
-td.cell-name{font-weight:600;color:#dde0f0;white-space:nowrap;text-align:left}
-td.cell-pts{color:#b8cce0;font-weight:500;font-size:12px}
-td.cell-pts.empty{color:#282840}
-td.cell-total{font-weight:800;font-size:15px;color:#e0a526;background:rgba(224,165,38,0.06)}
+td.cell-name{font-weight:600;color:#1a1a2e;white-space:nowrap;text-align:left}
+td.cell-pts{color:#3a4a5a;font-weight:500;font-size:12px}
+td.cell-pts.empty{color:#c8c8d8}
+td.cell-total{font-weight:800;font-size:15px;color:#b8860b;background:rgba(224,165,38,0.06)}
 
-.row-1{background:rgba(224,165,38,0.14)}
-.row-2{background:rgba(224,165,38,0.09)}
-.row-3{background:rgba(224,165,38,0.055)}
-.row-4{background:rgba(224,165,38,0.03)}
-.row-odd{background:rgba(255,255,255,0.015)}
-.row-even{background:rgba(255,255,255,0.04)}
+.row-1{background:rgba(224,165,38,0.12)}
+.row-2{background:rgba(224,165,38,0.07)}
+.row-3{background:rgba(224,165,38,0.04)}
+.row-4{background:rgba(224,165,38,0.02)}
+.row-odd{background:#ffffff}
+.row-even{background:#fafafc}
 
-.rank-1{color:#e0a526}
-.rank-2{color:#cda030}
+.rank-1{color:#b8860b}
+.rank-2{color:#c49a2e}
 .rank-3{color:#b0903a}
-.rank-4{color:#8a7a4a}
-.rank-default{color:#555568}
+.rank-4{color:#9a8a5a}
+.rank-default{color:#8a8a9a}
 
 /* CHART */
 .chart-section{padding:32px 28px 40px}
-.chart-title{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#5a6a7a;font-weight:700;margin-bottom:16px}
+.chart-title{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#7a8a9a;font-weight:700;margin-bottom:16px}
 .chart-container{position:relative;height:320px;width:100%}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal-box{background:#12122c;border:1px solid #2a2a4a;border-radius:16px;padding:32px;width:400px;max-width:92vw;position:relative;animation:modalIn .25s ease}
+.modal-box{background:#ffffff;border:1px solid #d8d8e4;border-radius:16px;padding:32px;width:400px;max-width:92vw;position:relative;animation:modalIn .25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
 @keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#5a6a7a;font-size:20px;cursor:pointer;line-height:1}
-.modal-close:hover{color:#b0b0c0}
-.modal-title{font-size:17px;font-weight:700;color:#e0e0f0;margin-bottom:6px}
-.modal-desc{font-size:12px;color:#5a6a7a;margin-bottom:18px;line-height:1.5}
-.modal-input{width:100%;padding:10px 14px;background:#0a0a18;border:1px solid #222244;border-radius:8px;color:#e0e0f0;font-family:'DM Mono',monospace;font-size:14px;outline:none;transition:border-color .2s}
-.modal-input:focus{border-color:#444466}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#8a8a9a;font-size:20px;cursor:pointer;line-height:1}
+.modal-close:hover{color:#3a3a4a}
+.modal-title{font-size:17px;font-weight:700;color:#1a1a2e;margin-bottom:6px}
+.modal-desc{font-size:12px;color:#7a8a9a;margin-bottom:18px;line-height:1.5}
+.modal-input{width:100%;padding:10px 14px;background:#f8f8fc;border:1px solid #d8d8e4;border-radius:8px;color:#1a1a2e;font-family:'DM Mono',monospace;font-size:14px;outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:#b8860b}
 .modal-input.error{border-color:#E63946}
 .modal-error{color:#E63946;font-size:11px;margin-top:6px;min-height:16px}
 .modal-btn{width:100%;padding:11px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:14px;transition:opacity .2s}
 .modal-btn:hover{opacity:.88}
-.modal-btn-gold{background:linear-gradient(135deg,#e0a526,#c48a10);color:#0d0d1a}
+.modal-btn-gold{background:linear-gradient(135deg,#e0a526,#c48a10);color:#fff}
 .modal-btn-teal{background:#2A9D8F;color:#fff}
-.modal-btn-dark{background:#222244;color:#d0d0e0}
+.modal-btn-dark{background:#eeeef4;color:#3a3a4a}
 
-.dropzone{border:2px dashed #2a2a4a;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.dropzone{border:2px dashed #d0d0de;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s}
 .dropzone.over{border-color:#e0a526;background:rgba(224,165,38,0.04)}
 .dropzone-icon{font-size:32px;margin-bottom:8px;opacity:.5}
-.dropzone-text{font-size:13px;color:#8a8aaa;margin-bottom:4px}
-.dropzone-sub{font-size:11px;color:#4a5a6a}
+.dropzone-text{font-size:13px;color:#6a7a8a;margin-bottom:4px}
+.dropzone-sub{font-size:11px;color:#9aa0b0}
 .dropzone input[type=file]{display:none}
 
 .spinner{display:inline-block;font-size:32px;animation:spin 1.2s linear infinite}
@@ -112,10 +114,13 @@ td.cell-total{font-weight:800;font-size:15px;color:#e0a526;background:rgba(224,1
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <div class="header-title"><span class="sword">⚔</span> Ranking Selectivo</div>
+    <div class="header-title"><span class="sword">⚔</span> Ranking Selectivo 2026 — Federación Colombiana de Esgrima</div>
     <div class="header-sub" id="headerSub"></div>
   </div>
-  <button class="btn-update" id="btnUpdate">↑ Actualizar Datos</button>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button class="btn-update" id="btnDownload">↓ Descargar Excel</button>
+    <button class="btn-update" id="btnUpdate">↑ Actualizar Datos</button>
+  </div>
 </div>
 
 <!-- TABS -->
@@ -165,33 +170,61 @@ const CHART_COLORS=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#264653',
 const LS_KEY='fencing-ranking-2022-v2';
 const PASSWORD='elDT_2026';
 
+// ═══════════════ FIREBASE ═══════════════
+const firebaseConfig={
+  apiKey:"AIzaSyCUAQoVR-5xOKif0eJULDDCbGl3TBBab5g",
+  authDomain:"ranking-esgrima.firebaseapp.com",
+  projectId:"ranking-esgrima",
+  storageBucket:"ranking-esgrima.firebasestorage.app",
+  messagingSenderId:"1064740717580",
+  appId:"1:1064740717580:web:709779b2bd3293b6e19a29"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const DOC_REF=db.collection('ranking').doc('current');
+
 // ═══════════════ STATE ═══════════════
 let data=[];
 let activeWeapon='EF';
 let chartInstance=null;
 let updatedDate=null;
+let firebaseReady=false;
 
-function loadData(){
+async function loadData(){
+  // 1. Try Firebase first
   try{
-    const stored=localStorage.getItem(LS_KEY);
-    if(stored){
-      const parsed=JSON.parse(stored);
-      if(parsed.records&&parsed.records.length){
-        data=parsed.records;
-        updatedDate=parsed.updatedAt||null;
+    const doc=await DOC_REF.get();
+    if(doc.exists){
+      const fb=doc.data();
+      if(fb.records&&fb.records.length){
+        // Firestore stores arrays of objects fine, but large arrays may be stored as JSON string
+        data=typeof fb.records==='string'?JSON.parse(fb.records):fb.records;
+        updatedDate=fb.updatedAt||null;
+        firebaseReady=true;
+        render();
         return;
       }
     }
-  }catch(e){}
+  }catch(e){console.warn('Firebase read failed, using fallback:',e)}
+  // 2. Fallback to embedded data
   data=DEFAULT_DATA;
   updatedDate=null;
+  render();
 }
 
-function saveData(records){
+async function saveData(records){
   const now=new Date().toISOString();
-  localStorage.setItem(LS_KEY,JSON.stringify({records,updatedAt:now}));
   data=records;
   updatedDate=now;
+  // Save to Firebase — store records as JSON string to avoid Firestore document size issues
+  try{
+    await DOC_REF.set({records:JSON.stringify(records),updatedAt:now});
+    firebaseReady=true;
+  }catch(e){
+    console.error('Firebase write failed:',e);
+    // Fallback: at least save locally
+    localStorage.setItem(LS_KEY,JSON.stringify({records,updatedAt:now}));
+  }
 }
 
 // ═══════════════ DATA PROCESSING ═══════════════
@@ -231,7 +264,7 @@ function getWeaponData(weaponCode){
 // ═══════════════ RENDER ═══════════════
 function updateHeader(){
   const fencerSet=new Set(data.map(r=>r.f));
-  let sub=`Selección Colombiana de Esgrima · ${data.length} registros · ${fencerSet.size} esgrimistas`;
+  let sub=`Federación Colombiana de Esgrima · ${data.length} registros · ${fencerSet.size} esgrimistas`;
   if(updatedDate){
     const d=new Date(updatedDate);
     sub+=` · Actualizado ${d.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}`;
@@ -330,25 +363,25 @@ function renderChart(){
       plugins:{
         legend:{position:'bottom',labels:{color:'#5a6a7a',font:{size:11,family:'DM Sans'},boxWidth:14,padding:12}},
         tooltip:{
-          backgroundColor:'#16163a',
-          borderColor:'#2a2a50',
+          backgroundColor:'#ffffff',
+          borderColor:'#d8d8e4',
           borderWidth:1,
           cornerRadius:8,
           titleFont:{size:12,family:'DM Sans'},
           bodyFont:{size:12,family:'DM Sans'},
-          titleColor:'#ccd0e0',
-          bodyColor:'#ccd0e0',
+          titleColor:'#1a1a2e',
+          bodyColor:'#3a4a5a',
           padding:10
         }
       },
       scales:{
         x:{
-          ticks:{color:'#5a6a7a',font:{size:9,family:'DM Sans'},maxRotation:40,minRotation:40},
-          grid:{color:'rgba(255,255,255,0.04)',drawBorder:false,borderDash:[4,4]}
+          ticks:{color:'#7a8a9a',font:{size:9,family:'DM Sans'},maxRotation:40,minRotation:40},
+          grid:{color:'rgba(0,0,0,0.06)',drawBorder:false,borderDash:[4,4]}
         },
         y:{
-          ticks:{color:'#5a6a7a',font:{size:11,family:'DM Sans'}},
-          grid:{color:'rgba(255,255,255,0.04)',drawBorder:false,borderDash:[4,4]}
+          ticks:{color:'#7a8a9a',font:{size:11,family:'DM Sans'}},
+          grid:{color:'rgba(0,0,0,0.06)',drawBorder:false,borderDash:[4,4]}
         }
       }
     }
@@ -475,9 +508,14 @@ function processFile(file){
         });
       });
       if(!records.length){showErrorStep('No se encontraron registros válidos.');return;}
-      saveData(records);
-      render();
-      showSuccessStep(file.name);
+      saveData(records).then(()=>{
+        render();
+        showSuccessStep(file.name);
+      }).catch(err=>{
+        // Data is still saved in memory even if Firebase fails
+        render();
+        showSuccessStep(file.name);
+      });
     }catch(err){
       showErrorStep('Error procesando el archivo: '+err.message);
     }
@@ -486,18 +524,50 @@ function processFile(file){
 }
 
 function showProcessingStep(fname){
-  modalContent.innerHTML=`<div class="step-center"><div class="spinner">⚙️</div><div style="margin-top:12px;color:#8a8aaa;font-size:13px">Procesando ${fname}…</div></div>`;
+  modalContent.innerHTML=`<div class="step-center"><div class="spinner">⚙️</div><div style="margin-top:12px;color:#6a7a8a;font-size:13px">Procesando ${fname}…</div></div>`;
 }
 function showSuccessStep(fname){
   modalContent.innerHTML=`<div class="step-center"><div class="step-icon">✅</div><div class="modal-title" style="color:#2A9D8F">¡Actualizado!</div><div class="modal-desc">${fname} cargado exitosamente.</div><button class="modal-btn modal-btn-teal" onclick="closeModal()">Listo</button></div>`;
 }
 function showErrorStep(msg){
-  modalContent.innerHTML=`<div class="step-center"><div class="step-icon">❌</div><div class="modal-title" style="color:#E63946">Error al Subir</div><div class="modal-desc" style="color:#b0b0c0">${msg}</div><button class="modal-btn modal-btn-dark" onclick="showUploadStep()">Intentar de Nuevo</button></div>`;
+  modalContent.innerHTML=`<div class="step-center"><div class="step-icon">❌</div><div class="modal-title" style="color:#E63946">Error al Subir</div><div class="modal-desc" style="color:#5a6a7a">${msg}</div><button class="modal-btn modal-btn-dark" onclick="showUploadStep()">Intentar de Nuevo</button></div>`;
 }
 
+// ═══════════════ DOWNLOAD ═══════════════
+function downloadExcel(){
+  // Load SheetJS if not loaded
+  function doDownload(){
+    const wb=XLSX.utils.book_new();
+    WEAPONS.forEach(w=>{
+      const{competitions,fencers}=getWeaponData(w.code);
+      if(!fencers.length)return;
+      const rows=fencers.map((f,i)=>{
+        const row={'#':i+1,'Esgrimista':f.name};
+        competitions.forEach(c=>{row[c]=f.pts[c]!==null?f.pts[c]:''});
+        row['TOTAL']=f.total;
+        return row;
+      });
+      const ws=XLSX.utils.json_to_sheet(rows);
+      const sheetName=`${w.label} ${w.gender==='Femenino'?'F':'M'}`;
+      XLSX.utils.book_append_sheet(wb,ws,sheetName);
+    });
+    XLSX.writeFile(wb,'Ranking_Selectivo_2026.xlsx');
+  }
+  if(window.XLSX){doDownload()}
+  else{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=doDownload;
+    document.head.appendChild(s);
+  }
+}
+document.getElementById('btnDownload').addEventListener('click',downloadExcel);
+
 // ═══════════════ INIT ═══════════════
-loadData();
+// Show embedded data immediately, then try Firebase
+data=DEFAULT_DATA;
 render();
+loadData(); // async — will re-render when Firebase responds
 </script>
 </body>
 </html>
